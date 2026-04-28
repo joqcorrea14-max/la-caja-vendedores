@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>La Caja — Para kiosqueros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0a0c0b;
+  --bg2:     #0f1410;
+  --surface: rgba(255,255,255,.04);
+  --border:  rgba(255,255,255,.07);
+  --text:    #e8e3d8;
+  --muted:   rgba(232,227,216,.38);
+  --accent:  #4a8f5a;
+  --accent2: #3a7a48;
+  --gold:    #c8a84b;
+  --gold2:   rgba(200,168,75,.15);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* NOISE TEXTURE */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: .6;
+}
+
+/* RADIAL GLOW */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 30%, rgba(58,122,72,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* MAIN STAGE */
+#stage {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* SCREEN */
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* PROGRESS BAR */
+#progress-wrap {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 2px; background: var(--border);
+}
+#progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, var(--accent2), var(--accent));
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+
+/* STEP COUNTER */
+#step-counter {
+  position: fixed; top: 1.5rem; right: 1.5rem; z-index: 100;
+  font-family: 'Oswald', sans-serif;
+  font-size: .7rem; font-weight: 400; letter-spacing: .18em;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity .4s;
+}
+#step-counter.visible { opacity: 1; }
+
+/* LOGO */
+#logo {
+  position: fixed; top: 1.25rem; left: 1.5rem; z-index: 100;
+  font-family: 'Oswald', sans-serif;
+  font-size: .85rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(232,227,216,.35);
+}
+
+/* TYPOGRAPHY */
+.eyebrow {
+  font-family: 'Oswald', sans-serif;
+  font-size: .68rem; font-weight: 400; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 1.75rem;
+}
+
+.headline {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600; line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: -.01em;
+  color: var(--text);
+  max-width: 16ch;
+}
+.headline.xl  { font-size: clamp(2.4rem, 8vw, 5.5rem); }
+.headline.lg  { font-size: clamp(2rem,  6vw, 4rem);   }
+.headline.md  { font-size: clamp(1.5rem, 4.5vw, 2.8rem); }
+.headline em  { font-style: normal; color: var(--accent); }
+.headline.center { max-width: 22ch; margin-left: auto; margin-right: auto; }
+
+.sub {
+  font-size: clamp(.9rem, 2.5vw, 1.05rem);
+  line-height: 1.65; font-weight: 300;
+  color: var(--muted);
+  max-width: 34ch; margin-top: 1.25rem;
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: .9rem 2rem;
+  border: none; border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: .95rem; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; cursor: pointer;
+  transition: all .22s cubic-bezier(.4,0,.2,1);
+  position: relative; overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,.06); opacity: 0;
+  transition: opacity .2s;
+}
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  width: 100%; max-width: 320px;
+}
+.btn-primary:hover { background: var(--accent2); }
+
+.btn-option {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 100%; max-width: 320px;
+  font-size: .85rem; letter-spacing: .08em;
+  padding: 1.1rem 1.5rem;
+  transition: all .2s;
+}
+.btn-option:hover, .btn-option.selected {
+  background: rgba(74,143,90,.12);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.btn-option.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 100%; max-width: 320px;
+  font-size: .85rem;
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+
+/* OPTION GROUP */
+.options {
+  display: flex; flex-direction: column;
+  gap: .75rem; width: 100%; max-width: 320px;
+  margin-top: 2rem;
+}
+
+/* STACK */
+.stack { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; }
+
+/* RULE */
+.rule {
+  width: 2.5rem; height: 1px;
+  background: linear-gradient(to right, transparent, var(--accent), transparent);
+  margin: .5rem auto;
+}
+
+/* NUMBER REVEAL */
+.number-reveal {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(3rem, 14vw, 7rem);
+  font-weight: 700; line-height: 1;
+  color: var(--gold);
+  letter-spacing: -.02em;
+}
+.number-label {
+  font-size: .78rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin-top: .5rem;
+}
+
+/* LOSS COUNTER */
+.loss-wrap {
+  background: rgba(200,168,75,.06);
+  border: 1px solid rgba(200,168,75,.15);
+  border-radius: 4px;
+  padding: 2rem 2.5rem;
+  text-align: center;
+  max-width: 320px; width: 100%;
+}
+.loss-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(2.5rem, 10vw, 4.5rem);
+  font-weight: 700; color: var(--gold);
+  letter-spacing: -.02em; line-height: 1;
+}
+.loss-label {
+  font-size: .78rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(200,168,75,.55);
+  margin-top: .4rem;
+}
+
+/* GAIN REVEAL */
+.gain-card {
+  background: rgba(74,143,90,.07);
+  border: 1px solid rgba(74,143,90,.2);
+  border-radius: 4px; padding: 2rem 2.5rem;
+  max-width: 320px; width: 100%;
+}
+.gain-context {
+  font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: .75rem;
+}
+.gain-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(2.5rem, 10vw, 4.5rem);
+  font-weight: 700; color: var(--accent);
+  line-height: 1; letter-spacing: -.02em;
+}
+.gain-period {
+  font-size: .85rem; color: var(--muted);
+  margin-top: .4rem; font-weight: 300;
+}
+
+/* FORM */
+.form-field {
+  width: 100%; max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: .9rem 1.1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .95rem; font-weight: 400;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.form-field::placeholder { color: rgba(232,227,216,.25); }
+.form-field:focus { border-color: var(--accent); }
+.form-group { display: flex; flex-direction: column; gap: .6rem; width: 100%; max-width: 320px; }
+.form-label { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+/* DONE STATE */
+.done-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(74,143,90,.15);
+  border: 1px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 2rem;
+}
+.done-circle svg { width: 28px; height: 28px; stroke: var(--accent); }
+
+/* TRANSITION OVERLAY */
+#overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--bg);
+  opacity: 0; pointer-events: none;
+  transition: opacity .35s cubic-bezier(.4,0,.2,1);
+}
+#overlay.fade-in  { opacity: 1; pointer-events: all; }
+#overlay.fade-out { opacity: 0; pointer-events: none; }
+
+/* WORD-BY-WORD ANIMATION */
+.word { display: inline-block; opacity: 0; transform: translateY(12px); }
+
+/* BACKGROUND WORD */
+.bg-word {
+  position: fixed; bottom: -3vw; left: 50%; transform: translateX(-50%);
+  font-family: 'Oswald', sans-serif;
+  font-size: 22vw; font-weight: 700;
+  color: rgba(255,255,255,.018);
+  letter-spacing: -.04em; white-space: nowrap;
+  pointer-events: none; z-index: 1;
+  user-select: none;
+}
+
+/* MOBILE SAFE AREA */
+@supports (padding: max(0px)) {
+  .screen { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+}
+
+/* SCROLLABLE SCREEN (form) */
+.screen.scrollable {
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding-top: 5rem;
+  padding-bottom: 3rem;
+}
+</style>
+</head>
+<body>
+
+<div id="overlay"></div>
+<div id="progress-wrap"><div id="progress-bar"></div></div>
+<div id="step-counter"></div>
+<div id="logo">La Caja</div>
+<div class="bg-word" id="bgWord">KIOSCO</div>
+
+<div id="stage">
+
+  <!-- SCREEN 1: IMPACTO -->
+  <div class="screen active" id="s1">
+    <div class="stack">
+      <div class="eyebrow" id="s1-eye">Para kiosqueros</div>
+      <h1 class="headline xl" id="s1-h">
+        Tenés un kiosco.
+        <em>Pero no todo lo que puede generar.</em>
+      </h1>
+      <div class="rule"></div>
+      <p class="sub" id="s1-sub">Dos minutos. Una pregunta. Un número que va a cambiar cómo ves tu negocio.</p>
+      <button class="btn btn-primary" id="s1-btn" onclick="goTo(2)">Ver cuánto podrías ganar</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: PREGUNTA 1 -->
+  <div class="screen" id="s2">
+    <div class="stack">
+      <div class="eyebrow">01 / 02</div>
+      <h2 class="headline md center" id="s2-h">¿Cuántas personas entran por día a tu kiosco?</h2>
+      <div class="options">
+        <button class="btn btn-option" data-q="traffic" data-v="30" onclick="selectOption(this, 'traffic', 30, 2)">Menos de 50</button>
+        <button class="btn btn-option" data-q="traffic" data-v="75" onclick="selectOption(this, 'traffic', 75, 2)">Entre 50 y 100</button>
+        <button class="btn btn-option" data-q="traffic" data-v="130" onclick="selectOption(this, 'traffic', 130, 2)">Más de 100</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: PREGUNTA 2 -->
+  <div class="screen" id="s3">
+    <div class="stack">
+      <div class="eyebrow">02 / 02</div>
+      <h2 class="headline md center" id="s3-h">¿Cuántas de esas personas compran algo adicional a lo básico?</h2>
+      <div class="options">
+        <button class="btn btn-option" data-q="upsell" data-v="0.05" onclick="selectOption(this, 'upsell', 0.05, 3)">Casi ninguna</button>
+        <button class="btn btn-option" data-q="upsell" data-v="0.20" onclick="selectOption(this, 'upsell', 0.20, 3)">Algunas</button>
+        <button class="btn btn-option" data-q="upsell" data-v="0.40" onclick="selectOption(this, 'upsell', 0.40, 3)">Muchas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: REVELACIÓN — PÉRDIDA -->
+  <div class="screen" id="s4">
+    <div class="stack">
+      <div class="eyebrow">El diagnóstico</div>
+      <h2 class="headline lg" id="s4-h">Estás dejando dinero sobre la mesa.</h2>
+      <div class="loss-wrap">
+        <div class="loss-value" id="lossValue">$0</div>
+        <div class="loss-label">potencial no capturado por mes</div>
+      </div>
+      <p class="sub" style="max-width:28ch">Cada persona que entra y sale sin comprar algo de margen alto es dinero que no volvés a ver.</p>
+      <button class="btn btn-primary" onclick="goTo(5)">Ver cómo recuperarlo</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: INTRODUCCIÓN LA CAJA -->
+  <div class="screen" id="s5">
+    <div class="stack">
+      <div class="eyebrow">La solución</div>
+      <h2 class="headline lg center" id="s5-h">
+        La Caja es un producto listo para vender.
+        <em>Sin esfuerzo. Con margen real.</em>
+      </h2>
+      <div class="rule"></div>
+      <p class="sub">El cliente ya conoce el precio del supermercado. La Caja cuesta menos y vale más. Eso es lo único que tenés que explicar.</p>
+      <button class="btn btn-primary" onclick="goTo(6)">Ver qué significa para mí</button>
+      <button class="btn btn-ghost" style="margin-top:.25rem" onclick="goTo(6)">Mostrarme los números</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 6: SIMULACIÓN -->
+  <div class="screen" id="s6">
+    <div class="stack">
+      <div class="eyebrow">Tu proyección</div>
+      <h2 class="headline md center" id="s6-h">Si <em id="s6-units">10</em> personas por día compran La Caja...</h2>
+      <div class="gain-card">
+        <div class="gain-context">Ganancia estimada mensual</div>
+        <div class="gain-value" id="gainValue">$0</div>
+        <div class="gain-period">30 días · margen promedio por caja</div>
+      </div>
+      <p class="sub" style="max-width:28ch;font-size:.85rem">Basado en el tráfico que describiste. Con recompra frecuente, el número sube.</p>
+      <button class="btn btn-primary" onclick="goTo(7)">Quiero eso en mi kiosco</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 7: CIERRE NARRATIVO -->
+  <div class="screen" id="s7">
+    <div class="stack">
+      <div class="eyebrow">Lo que cambia</div>
+      <h2 class="headline lg center" id="s7-h">
+        No cambiás tu negocio.
+        <em>Le sumás algo que ya funciona.</em>
+      </h2>
+      <div class="rule"></div>
+      <p class="sub">La Caja entra al kiosco sin inversión en estructura. Ocupás poco espacio. Generás margen real. El cliente la lleva solo cuando la ve.</p>
+      <button class="btn btn-primary" onclick="goTo(8)">Quiero ser punto de venta</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 8: FORMULARIO -->
+  <div class="screen scrollable" id="s8">
+    <div class="stack">
+      <div class="eyebrow">Activar mi kiosco</div>
+      <h2 class="headline md center" style="margin-bottom:1.75rem">Tres datos y abrimos la conversación.</h2>
+      <div class="form-group">
+        <label class="form-label" for="f-nombre">Tu nombre</label>
+        <input class="form-field" id="f-nombre" type="text" placeholder="José" autocomplete="given-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="f-kiosco">Nombre del kiosco</label>
+        <input class="form-field" id="f-kiosco" type="text" placeholder="Kiosco El Rincón">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="f-ubicacion">Ubicación</label>
+        <input class="form-field" id="f-ubicacion" type="text" placeholder="Barrio, ciudad" autocomplete="address-level2">
+      </div>
+      <button class="btn btn-primary" style="margin-top:.5rem" id="wsp-btn" onclick="submitForm()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:.5rem;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.86L.057 23.999l6.306-1.648A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.374l-.36-.213-3.713.971.99-3.618-.236-.373A9.818 9.818 0 1 1 12 21.818z"/></svg>
+        Quiero vender La Caja
+      </button>
+      <p style="font-size:.72rem;color:var(--muted);max-width:26ch;line-height:1.6;margin-top:.75rem">Abre WhatsApp con un mensaje listo. Sin formularios, sin esperas.</p>
+    </div>
+  </div>
+
+  <!-- SCREEN 9: GRACIAS -->
+  <div class="screen" id="s9">
+    <div class="stack">
+      <div class="done-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2 class="headline md center">Ya abrió<br><em>WhatsApp.</em></h2>
+      <div class="rule"></div>
+      <p class="sub">Tu mensaje ya está listo para enviar. En cuanto lo mandés, coordinamos los detalles para activar tu kiosco como punto de venta oficial.</p>
+      <div style="margin-top:1rem;padding:1.25rem 2rem;background:var(--surface);border:1px solid var(--border);border-radius:3px;max-width:320px;width:100%">
+        <div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">Tu proyección estimada</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:2rem;font-weight:700;color:var(--accent)" id="finalGain"></div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">ganancia mensual estimada</div>
+      </div>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:1.5rem">La Caja &mdash; Sistema de distribución 2026</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+const state = {
+  current: 1,
+  total: 8,
+  traffic: 75,
+  upsell: 0.20,
+  marginPerBox: 1800,   // ARS margin per caja for kiosco
+  boxesPerDay: 10,
+};
+
+// ── CALCULATIONS ───────────────────────────────────────────────────────────
+function calcLoss() {
+  // Potential extra sales they're not capturing
+  const potentialBuyers = state.traffic * 0.3;
+  const captured = state.traffic * state.upsell;
+  const missed = Math.max(0, potentialBuyers - captured);
+  return Math.round(missed * state.marginPerBox * 30);
+}
+
+function calcGain() {
+  const dailyBoxes = Math.max(3, Math.round(state.traffic * 0.10));
+  state.boxesPerDay = dailyBoxes;
+  return Math.round(dailyBoxes * state.marginPerBox * 30);
+}
+
+function formatARS(n) {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1).replace('.', ',') + 'M';
+  if (n >= 1000) return '$' + Math.round(n / 1000) + 'K';
+  return '$' + n.toLocaleString('es-AR');
+}
+
+// ── TRANSITION ─────────────────────────────────────────────────────────────
+const overlay = document.getElementById('overlay');
+let transitioning = false;
+
+function goTo(n) {
+  if (transitioning) return;
+  transitioning = true;
+
+  overlay.classList.add('fade-in');
+  setTimeout(() => {
+    showScreen(n);
+    overlay.classList.remove('fade-in');
+    overlay.classList.add('fade-out');
+    setTimeout(() => {
+      overlay.classList.remove('fade-out');
+      transitioning = false;
+    }, 380);
+  }, 360);
+}
+
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const screen = document.getElementById('s' + n);
+  screen.classList.add('active');
+  state.current = n;
+  updateUI(n);
+  animateWords(screen);
+  updateBgWord(n);
+}
+
+// ── UI UPDATE ──────────────────────────────────────────────────────────────
+function updateUI(n) {
+  // Progress
+  const pct = Math.round(((n - 1) / state.total) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+
+  // Step counter
+  const ctr = document.getElementById('step-counter');
+  if (n > 1 && n < 9) {
+    ctr.textContent = (n - 1) + ' / ' + state.total;
+    ctr.classList.add('visible');
+  } else {
+    ctr.classList.remove('visible');
+  }
+
+  // Calculate and display loss on screen 4
+  if (n === 4) {
+    const loss = calcLoss();
+    animateCounter(document.getElementById('lossValue'), 0, loss, 1400, formatARS);
+  }
+
+  // Calculate gain on screen 6
+  if (n === 6) {
+    const gain = calcGain();
+    document.getElementById('s6-units').textContent = state.boxesPerDay;
+    animateCounter(document.getElementById('gainValue'), 0, gain, 1400, formatARS);
+    document.getElementById('finalGain').textContent = formatARS(gain);
+  }
+}
+
+function updateBgWord(n) {
+  const words = ['', 'KIOSCO', 'TRÁFICO', 'COMPRAS', 'PÉRDIDA', 'SOLUCIÓN', 'GANANCIA', 'NEGOCIO', 'INICIO', 'GRACIAS'];
+  const el = document.getElementById('bgWord');
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = words[n] || '';
+    el.style.opacity = '1';
+    el.style.transition = 'opacity .6s';
+  }, 200);
+}
+
+// ── OPTION SELECT ──────────────────────────────────────────────────────────
+function selectOption(btn, key, value, screenNum) {
+  const parent = btn.closest('.options');
+  parent.querySelectorAll('.btn-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state[key] = value;
+
+  setTimeout(() => goTo(screenNum + 1), 340);
+}
+
+// ── WORD ANIMATION ─────────────────────────────────────────────────────────
+function animateWords(screen) {
+  const headings = screen.querySelectorAll('.headline, .eyebrow, .sub');
+  headings.forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    el.style.transition = `opacity .5s ease ${i * .08}s, transform .5s ease ${i * .08}s`;
+    requestAnimationFrame(() => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    });
+  });
+
+  const btns = screen.querySelectorAll('.btn, .loss-wrap, .gain-card, .form-group, .done-circle');
+  btns.forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(14px)';
+    const delay = 0.18 + i * 0.07;
+    el.style.transition = `opacity .5s ease ${delay}s, transform .5s ease ${delay}s`;
+    requestAnimationFrame(() => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    });
+  });
+}
+
+// ── COUNTER ANIMATION ──────────────────────────────────────────────────────
+function animateCounter(el, from, to, duration, formatter) {
+  const start = performance.now();
+  function frame(now) {
+    const elapsed = now - start;
+    const progress = Math.min(1, elapsed / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = formatter(Math.round(from + (to - from) * eased));
+    if (progress < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── WHATSAPP CONFIG ────────────────────────────────────────────────────────
+// Reemplazá este número con el tuyo (código de país sin + ni espacios)
+const WA_NUMBER = '5493760000000';
+
+// ── FORM SUBMIT ────────────────────────────────────────────────────────────
+function submitForm() {
+  const nombre    = document.getElementById('f-nombre').value.trim();
+  const kiosco    = document.getElementById('f-kiosco').value.trim();
+  const ubicacion = document.getElementById('f-ubicacion').value.trim();
+
+  // Validar nombre mínimo
+  if (!nombre) {
+    const field = document.getElementById('f-nombre');
+    field.style.borderColor = 'rgba(200,80,80,.7)';
+    field.focus();
+    setTimeout(() => { field.style.borderColor = ''; }, 1800);
+    return;
+  }
+
+  // Calcular ganancia para incluir en mensaje
+  const gain = calcGain();
+  const gainStr = formatARS(gain);
+
+  // Armar mensaje prefijado
+  const lines = [
+    `Hola, quiero vender La Caja en mi kiosco.`,
+    ``,
+    `Nombre: ${nombre}`,
+    kiosco    ? `Kiosco: ${kiosco}`       : null,
+    ubicacion ? `Ubicacion: ${ubicacion}` : null,
+    ``,
+    `Segun la simulacion, podria ganar ${gainStr} por mes.`,
+    ``,
+    `Quiero saber como activar mi punto de venta.`,
+  ].filter(l => l !== null).join('\n');
+
+  const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(lines)}`;
+
+  // Mostrar pantalla de confirmación y abrir WhatsApp
+  goTo(9);
+  setTimeout(() => { window.open(url, '_blank'); }, 500);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+(function init() {
+  // Animate first screen on load
+  setTimeout(() => {
+    animateWords(document.getElementById('s1'));
+    const btns = document.querySelectorAll('#s1 .btn');
+    btns.forEach((el, i) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(14px)';
+      el.style.transition = `opacity .5s ease ${.4 + i*.1}s, transform .5s ease ${.4 + i*.1}s`;
+      requestAnimationFrame(() => {
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      });
+    });
+  }, 80);
+})();
+
+// Prevent double-tap zoom on mobile buttons
+document.querySelectorAll('.btn').forEach(btn => {
+  btn.addEventListener('touchend', e => e.preventDefault(), { passive: false });
+});
+</script>
+</body>
+</html>
